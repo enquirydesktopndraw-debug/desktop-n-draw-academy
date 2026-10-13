@@ -1,9 +1,11 @@
-const CACHE = 'desktop-n-draw-creative-hub-v6';
+const CACHE = 'desktop-n-draw-creative-hub-v10';
 const ASSETS = [
   './',
   './index.html',
   './styles.css',
   './app.js',
+  './dnd-data.js',
+  './brand.css',
   './manifest.webmanifest',
   './assets/desktop-n-draw-logo.png',
   './assets/icon-192.png',

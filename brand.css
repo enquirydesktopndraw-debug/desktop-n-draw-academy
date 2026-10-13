@@ -1,0 +1,26 @@
+/* =====================================================================
+   DESKTOP N DRAW - BRAND FILE (website + app, dono ke folder mein apni copy)
+   Colour ya font badalna ho to sirf yahan badlein, phir yahi file
+   dono jagah (website folder + app folder) mein rakh dein.
+   Fonts Google Fonts se aate hain; HTML <head> mein unka link hai.
+   ===================================================================== */
+:root{
+ /* Main colours */
+ --dnd-yellow:#ffd000;     /* buttons, highlights */
+ --dnd-deep:#190529;       /* deep purple: banners, headers, footer */
+ --dnd-deep2:#32105b;      /* deep purple gradient */
+ --dnd-grad:#45206c;       /* gradient end */
+ --dnd-mid:#5e3283;        /* links, small labels */
+ /* Text */
+ --dnd-ink:#20152c;
+ --dnd-muted:#716879;
+ /* Light backgrounds */
+ --dnd-bg:#f7f5fa;
+ --dnd-lav:#f0e9f8;
+ --dnd-lav2:#eee1ff;
+ --dnd-ylight:#fff0a5;
+ --dnd-line:#eee8f2;
+ /* Fonts */
+ --dnd-font-head:Outfit,"Noto Sans Devanagari",system-ui,sans-serif;
+ --dnd-font-body:"DM Sans","Noto Sans Devanagari",system-ui,sans-serif;
+}
