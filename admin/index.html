@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="robots" content="noindex,nofollow"><meta name="theme-color" content="#190529"><title>Art Review inbox | Desktop N Draw</title>
+<style>
+:root{--purple:#190529;--purple2:#32105b;--yellow:#ffd000;--white:#fff;--ink:#20152c;--muted:#716879;--line:#eee8f2;--green:#16794b;--red:#b3263f}
+*{box-sizing:border-box}body{margin:0;background:#f7f5fa;color:var(--ink);font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;font-size:15px;line-height:1.5}
+header{position:sticky;top:0;z-index:2;display:flex;justify-content:space-between;align-items:center;gap:10px;padding:12px 16px;background:var(--purple);color:#fff}
+header h1{margin:0;font-size:17px}header small{display:block;color:#cbb8ff;font-size:12px}
+button{font:inherit;cursor:pointer}.btn{border:0;border-radius:10px;padding:11px 14px;font-weight:800;font-size:14px;min-height:44px}
+.btn.yellow{background:var(--yellow);color:var(--purple)}.btn.dark{background:var(--purple);color:#fff}.btn.light{background:#efe9f6;color:var(--purple)}.btn.red{background:#fde8ec;color:var(--red)}
+main{max-width:760px;margin:0 auto;padding:16px 14px 60px}
+.card{background:#fff;border:1px solid var(--line);border-radius:18px;padding:16px;margin-bottom:14px;box-shadow:0 5px 16px #32105b12}
+input[type=password],textarea{width:100%;border:1px solid #ded6e6;border-radius:12px;padding:12px;font:inherit;background:#fdfcff}
+textarea{min-height:84px;resize:vertical}
+.hidden{display:none!important}.muted{color:var(--muted);font-size:13px}.err{color:var(--red);font-weight:700;margin-top:10px}
+.thumb{display:block;width:100%;max-height:420px;object-fit:contain;background:#f1ecf7;border-radius:12px}
+.meta{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:12px 0 6px}.tag{border-radius:999px;padding:4px 10px;font-size:12px;font-weight:800;background:#efe9f6;color:var(--purple)}.tag.ok{background:#e1f6ec;color:var(--green)}
+.q{white-space:pre-wrap;overflow-wrap:anywhere;margin:8px 0 12px}.row{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+label.chk{display:flex;gap:8px;align-items:center;font-weight:700;margin-top:10px}
+</style></head><body>
+<header><div><h1>Art Review inbox</h1><small>Private. Only you can see this page.</small></div><button id="logout" class="btn light hidden" type="button">Log out</button></header>
+<main>
+ <section id="login" class="card"><h2 style="margin:0 0 6px">Owner login</h2><p class="muted" style="margin:0 0 12px">Enter the admin password you set in Cloudflare.</p><label for="pw" class="muted">Password</label><input id="pw" type="password" autocomplete="current-password"><div class="row"><button id="loginBtn" class="btn yellow" type="button">Open inbox</button></div><p id="loginErr" class="err hidden"></p></section>
+ <section id="inbox" class="hidden"><div class="row" style="margin:0 0 12px;align-items:center"><span id="count" class="muted"></span><button id="refresh" class="btn light" type="button">Refresh</button></div><div id="list"></div><div class="row"><button id="more" class="btn dark hidden" type="button">Load more</button></div><p id="empty" class="muted hidden">No artwork yet. New submissions can take up to a minute to appear.</p></section>
+</main>
+<script>
+(function(){
+var KEY='dndAdminPw',pw=sessionStorage.getItem(KEY)||'',cursor=null,loaded=0,urls=[];
+var $=function(id){return document.getElementById(id)};
+function api(path,opts){opts=opts||{};opts.headers=Object.assign({'Authorization':'Bearer '+pw},opts.headers||{});return fetch(path,opts)}
+function show(loggedIn){$('login').classList.toggle('hidden',loggedIn);$('inbox').classList.toggle('hidden',!loggedIn);$('logout').classList.toggle('hidden',!loggedIn)}
+function logout(msg){pw='';sessionStorage.removeItem(KEY);cursor=null;loaded=0;urls.forEach(function(u){URL.revokeObjectURL(u)});urls=[];$('list').innerHTML='';show(false);if(msg){$('loginErr').textContent=msg;$('loginErr').classList.remove('hidden')}}
+function when(iso){try{return new Date(iso).toLocaleString()}catch(e){return iso}}
+function el(tag,cls,text){var e=document.createElement(tag);if(cls)e.className=cls;if(text!==undefined)e.textContent=text;return e}
+function card(item){
+ var c=el('article','card');
+ var img=el('img','thumb');img.alt='Submitted artwork';c.append(img);
+ api('/api/admin/image?id='+encodeURIComponent(item.id)).then(function(r){if(!r.ok)throw 0;return r.blob()}).then(function(b){var u=URL.createObjectURL(b);urls.push(u);img.src=u;dl.href=u;dl.download='art-'+item.id+'.'+(item.type==='image/png'?'png':item.type==='image/webp'?'webp':'jpg')}).catch(function(){img.replaceWith(el('p','muted','Image could not be loaded.'))});
+ var meta=el('div','meta');meta.append(el('strong','',item.name||'Anonymous'),el('span','tag',item.level),el('span','muted',when(item.createdAt)),el('span','muted',(item.size/1024/1024).toFixed(2)+' MB'));
+ var status=el('span','tag'+(item.reviewed?' ok':''),item.reviewed?'Reviewed':'New');meta.append(status);
+ c.append(meta,el('p','q',item.question));
+ var note=el('textarea');note.placeholder='Your notes and suggestions (only you can see this)';note.value=item.note||'';note.maxLength=2000;
+ var chk=el('label','chk');var cb=el('input');cb.type='checkbox';cb.checked=!!item.reviewed;chk.append(cb,document.createTextNode(' Mark as reviewed'));
+ var row=el('div','row');var save=el('button','btn yellow','Save');save.type='button';var dl=el('a','btn light','Download');dl.style.textDecoration='none';dl.style.display='inline-flex';dl.style.alignItems='center';var del=el('button','btn red','Delete');del.type='button';row.append(save,dl,del);
+ var msg=el('p','muted');
+ save.onclick=function(){save.disabled=true;api('/api/admin/update',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({id:item.id,note:note.value,reviewed:cb.checked})}).then(function(r){if(r.status===401)return logout('Session ended. Log in again.');if(!r.ok)throw 0;status.textContent=cb.checked?'Reviewed':'New';status.className='tag'+(cb.checked?' ok':'');msg.textContent='Saved.'}).catch(function(){msg.textContent='Could not save. Try again.'}).finally(function(){save.disabled=false})};
+ del.onclick=function(){if(!confirm('Delete this artwork permanently?'))return;api('/api/admin/delete',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({id:item.id})}).then(function(r){if(!r.ok)throw 0;c.remove();loaded--;count()}).catch(function(){msg.textContent='Could not delete. Try again.'})};
+ c.append(note,chk,row,msg);return c}
+function count(){$('count').textContent=loaded+' loaded';$('empty').classList.toggle('hidden',loaded>0)}
+function load(reset){
+ if(reset){cursor=null;loaded=0;urls.forEach(function(u){URL.revokeObjectURL(u)});urls=[];$('list').innerHTML=''}
+ var q=cursor?'?cursor='+encodeURIComponent(cursor):'';
+ return api('/api/admin/list'+q).then(function(r){
+  if(r.status===401||r.status===429){return r.json().then(function(d){logout(d.error)}).then(function(){throw 0})}
+  if(!r.ok)throw 1;return r.json()}).then(function(d){
+  show(true);sessionStorage.setItem(KEY,pw);
+  d.items.forEach(function(i){$('list').append(card(i));loaded++});
+  cursor=d.cursor;$('more').classList.toggle('hidden',!cursor);count()}).catch(function(e){if(e===1){$('loginErr').textContent='Could not load. Check that the Cloudflare setup is finished.';$('loginErr').classList.remove('hidden')}})}
+$('loginBtn').onclick=function(){pw=$('pw').value;$('loginErr').classList.add('hidden');if(!pw)return;load(true)};
+$('pw').addEventListener('keydown',function(e){if(e.key==='Enter')$('loginBtn').click()});
+$('refresh').onclick=function(){load(true)};$('more').onclick=function(){load(false)};$('logout').onclick=function(){logout()};
+if(pw)load(true);
+})();
+</script></body></html>
